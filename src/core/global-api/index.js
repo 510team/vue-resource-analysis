@@ -1,62 +1,67 @@
 /* @flow */
 
-import config from '../config'
-import { initUse } from './use'
-import { initMixin } from './mixin'
-import { initExtend } from './extend'
-import { initAssetRegisters } from './assets'
-import { set, del } from '../observer/index'
-import { ASSET_TYPES } from 'shared/constants'
-import builtInComponents from '../components/index'
+import config from "../config";
+import { initUse } from "./use";
+import { initMixin } from "./mixin";
+import { initExtend } from "./extend";
+import { initAssetRegisters } from "./assets";
+import { set, del } from "../observer/index";
+import { ASSET_TYPES } from "shared/constants";
+import builtInComponents from "../components/index";
 
 import {
-  warn,
-  extend,
-  nextTick,
-  mergeOptions,
-  defineReactive
-} from '../util/index'
-
-export function initGlobalAPI (Vue: GlobalAPI) {
-  // config
-  const configDef = {}
-  configDef.get = () => config
-  if (process.env.NODE_ENV !== 'production') {
-    configDef.set = () => {
-      warn(
-        'Do not replace the Vue.config object, set individual fields instead.'
-      )
-    }
-  }
-  Object.defineProperty(Vue, 'config', configDef)
-
-  // exposed util methods.
-  // NOTE: these are not considered part of the public API - avoid relying on
-  // them unless you are aware of the risk.
-  Vue.util = {
     warn,
     extend,
+    nextTick,
     mergeOptions,
     defineReactive
-  }
+} from "../util/index";
+// Vue:GlobalAPI GlobalAPI是借助flow自定义的一个类型，可以对参数做一些约束，其原型定义在flow/global-api.js中
+export function initGlobalAPI(Vue: GlobalAPI) {
+    // config
+    const configDef = {};
+    configDef.get = () => config;
+    if (process.env.NODE_ENV !== "production") {
+        configDef.set = () => {
+            warn(
+                "Do not replace the Vue.config object, set individual fields instead."
+            );
+        };
+    }
+    Object.defineProperty(Vue, "config", configDef);
 
-  Vue.set = set
-  Vue.delete = del
-  Vue.nextTick = nextTick
+    // exposed util methods.
+    // NOTE: these are not considered part of the public API - avoid relying on
+    // them unless you are aware of the risk.
+    Vue.util = {
+        warn,
+        extend,
+        mergeOptions,
+        defineReactive
+    };
 
-  Vue.options = Object.create(null)
-  ASSET_TYPES.forEach(type => {
-    Vue.options[type + 's'] = Object.create(null)
-  })
+    Vue.set = set;
+    Vue.delete = del;
+    Vue.nextTick = nextTick;
 
-  // this is used to identify the "base" constructor to extend all plain-object
-  // components with in Weex's multi-instance scenarios.
-  Vue.options._base = Vue
+    Vue.options = Object.create(null);
+    //ASSET_TYPES = [
+    //   'component',
+    //   'directive',
+    //   'filter'
+    // ]
+    ASSET_TYPES.forEach(type => {
+        Vue.options[type + "s"] = Object.create(null);
+    });
 
-  extend(Vue.options.components, builtInComponents)
+    // this is used to identify the "base" constructor to extend all plain-object
+    // components with in Weex's multi-instance scenarios.
+    Vue.options._base = Vue;
 
-  initUse(Vue)
-  initMixin(Vue)
-  initExtend(Vue)
-  initAssetRegisters(Vue)
+    extend(Vue.options.components, builtInComponents);
+
+    initUse(Vue);
+    initMixin(Vue);
+    initExtend(Vue);
+    initAssetRegisters(Vue);
 }
