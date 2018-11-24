@@ -74,7 +74,9 @@ export function initMixin(Vue: Class<Component>) {
             measure(`vue ${vm._name} init`, startTag, endTag);
         }
 
+        // 将vm实例挂载到dom上
         if (vm.$options.el) {
+            /*src/core/instance/lifecycle.js中的mountComponent方法，*/
             vm.$mount(vm.$options.el);
         }
     };
