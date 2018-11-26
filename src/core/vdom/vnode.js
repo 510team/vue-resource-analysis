@@ -19,7 +19,7 @@ export default class VNode {
     isRootInsert: boolean; // necessary for enter transition check 是否作为跟节点插入
     isComment: boolean; // empty comment placeholder?
     isCloned: boolean; // is a cloned node?
-    isOnce: boolean; // is a v-once node?   是否有v-once指令
+    isOnce: boolean; // is a v-once node?   是否有v-once指令,是，只渲染一次
     asyncFactory: Function | void; // async component factory function
     asyncMeta: Object | void;
     isAsyncPlaceholder: boolean;

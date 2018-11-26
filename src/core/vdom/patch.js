@@ -76,7 +76,7 @@ function sameInputType(a, b) {
     );
 }
 /*
-  生成一个key与旧VNode的key对应的哈希表
+  生成一个key与旧VNode的索引对应的哈希表
   比如childre是这样的 [{xx: xx, key: 'key0'}, {xx: xx, key: 'key1'}, {xx: xx, key: 'key2'}]  beginIdx = 0   endIdx = 2  
   结果生成{key0: 0, key1: 1, key2: 2}
 */
@@ -153,6 +153,7 @@ export function createPatchFunction(backend) {
 
     let creatingElmInVPre = 0;
 
+    // createEle(vnode)会为vnode创建它的真实dom(包括字节点的dom)，令vnode.el = 真实dom
     function createElm(
         vnode,
         insertedVnodeQueue,
@@ -324,6 +325,7 @@ export function createPatchFunction(backend) {
         }
     }
 
+    /* vnode 子节点生成dom  */
     function createChildren(vnode, children, insertedVnodeQueue) {
         if (Array.isArray(children)) {
             if (process.env.NODE_ENV !== "production") {
@@ -397,7 +399,7 @@ export function createPatchFunction(backend) {
             nodeOps.setStyleScope(vnode.elm, i);
         }
     }
-    /**添加虚节点 */
+    /**添加虚节点，添加到dom */
     function addVnodes(
         parentElm,
         refElm,
@@ -507,6 +509,10 @@ export function createPatchFunction(backend) {
             checkDuplicateKeys(newCh);
         }
 
+        /*
+        总结：oldCh和newCh各有两个头尾的变量StartIdx和EndIdx，它们的2个变量相互比较，一共有4种比较方式。如果4种比较都没匹配，如果设置了key，就会用key进行比较，在比较的过程中，变量会往中间靠，一旦StartIdx>EndIdx表明oldCh和newCh至少有一个已经遍历完了，就会结束比较。
+        
+        */
         while (oldStartIdx <= oldEndIdx && newStartIdx <= newEndIdx) {
             if (isUndef(oldStartVnode)) {
                 oldStartVnode = oldCh[++oldStartIdx]; // Vnode has been moved left
@@ -544,17 +550,18 @@ export function createPatchFunction(backend) {
                 newStartVnode = newCh[++newStartIdx];
             } else {
                 /*
-          生成一个key与旧VNode的key对应的哈希表（只有第一次进来undefined的时候会生成，也为后面检测重复的key值做铺垫）
+          createKeyToOldIdx生成一个key与旧VNode的索引对应的哈希表（只有第一次进来undefined的时候会生成，也为后面检测重复的key值做铺垫）
           比如childre是这样的 [{xx: xx, key: 'key0'}, {xx: xx, key: 'key1'}, {xx: xx, key: 'key2'}]  beginIdx = 0   endIdx = 2  
           结果生成{key0: 0, key1: 1, key2: 2}
         */
                 if (isUndef(oldKeyToIdx))
+                    //返回key与索引的关系的map
                     oldKeyToIdx = createKeyToOldIdx(
                         oldCh,
                         oldStartIdx,
                         oldEndIdx
                     );
-                /*如果newStartVnode新的VNode节点存在key并且这个key在oldVnode中能找到则返回这个节点的idxInOld（即第几个节点，下标）*/
+                /*如果newStartVnode存在key并且这个key在oldVnode中能找到，则返回这个节点的idxInOld（即第几个节点，下标）*/
                 idxInOld = isDef(newStartVnode.key)
                     ? oldKeyToIdx[newStartVnode.key]
                     : findIdxInOld(
@@ -608,6 +615,7 @@ export function createPatchFunction(backend) {
             }
         }
         if (oldStartIdx > oldEndIdx) {
+            //添加新节点
             refElm = isUndef(newCh[newEndIdx + 1])
                 ? null
                 : newCh[newEndIdx + 1].elm;
@@ -620,6 +628,7 @@ export function createPatchFunction(backend) {
                 insertedVnodeQueue
             );
         } else if (newStartIdx > newEndIdx) {
+            //删除老节点
             removeVnodes(parentElm, oldCh, oldStartIdx, oldEndIdx);
         }
     }
@@ -891,8 +900,9 @@ export function createPatchFunction(backend) {
     }
     /**
      * 总结：
-     * 当oldVnode与vnode在sameVnode的时候才会进行patchVnode，也就是新旧VNode节点判定为同一节点的时候才会进行patchVnode这个过程，否则就是创建新的DOM，移除旧的DOM。
+     * 当vnode和oldVnode都存在、oldVnode不是真实节点，并且vnode和oldVnode是同一节点时，才会调用patchVnode进行patch，否则就是创建新的DOM，移除旧的DOM。
      * */
+    //hydrating是否要和真实DOM混合
     return function patch(oldVnode, vnode, hydrating, removeOnly) {
         /*vnode不存在则直接调用销毁钩子*/
         if (isUndef(vnode)) {
@@ -900,8 +910,8 @@ export function createPatchFunction(backend) {
             return;
         }
 
-        let isInitialPatch = false;
-        const insertedVnodeQueue = [];
+        let isInitialPatch = false; // 用于做延迟插值处理
+        const insertedVnodeQueue = []; //记录被插入的vnode队列，用于批触发insert
 
         if (isUndef(oldVnode)) {
             /*oldVnode未定义的时候，创建一个新的节点*/
@@ -916,6 +926,8 @@ export function createPatchFunction(backend) {
                 // patch existing root node
                 patchVnode(oldVnode, vnode, insertedVnodeQueue, removeOnly);
             } else {
+                /* oldVnode是真实节点时或vnode和oldVnode不是同一节点时，找到oldVnode.elm的父节点，根据vnode创建一个真实的DOM节点，并插入到该父节点中的oldVnode.elm位置。如果组件根节点被替换，遍历更新父节点element。然后移除旧节点。
+                 */
                 if (isRealElement) {
                     // mounting to a real element
                     // check if this is server-rendered content and if we can perform
