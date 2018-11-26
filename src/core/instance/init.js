@@ -74,8 +74,19 @@ export function initMixin(Vue: Class<Component>) {
             measure(`vue ${vm._name} init`, startTag, endTag);
         }
 
-        // 将vm实例挂载到dom上
+        // 将vm实例挂载到dom上（将组件渲染，并且构造 DOM 元素然后塞入页面的过程称为组件的挂载）
+        // // options==={el:'#app,data:{a:1,b:[1,2,3]}}
         if (vm.$options.el) {
+            // Vue.prototype.$mount = function (
+            //     el,
+            //     hydrating
+            //   ) {
+            //     return mountComponent(
+            //       this,
+            //       el && query(el, this.$document),
+            //       hydrating
+            //     )
+            //   };
             /*src/core/instance/lifecycle.js中的mountComponent方法，*/
             vm.$mount(vm.$options.el);
         }
