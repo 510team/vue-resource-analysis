@@ -1,11 +1,11 @@
 /* @flow */
 
 export default class VNode {
-    tag: string | void;
+    tag: string | void; //标签
     data: VNodeData | void; //当前节点对应的对象，包含了具体的一些数据信息，是一个VNodeData类型
-    children: ?Array<VNode>;
-    text: string | void;
-    elm: Node | void; //当前虚拟节点对应的真实dom节点
+    children: ?Array<VNode>; //子节点
+    text: string | void; //文本
+    elm: Node | void; //当前虚拟节点对应的真实dom节点的引用
     ns: string | void; //当前节点的名字空间
     context: Component | void; // rendered in this component's scope  编译作用域
     key: string | number | void; //被当作节点的标志，在diff过程中可以提高diff的效率
@@ -69,7 +69,7 @@ export default class VNode {
         return this.componentInstance;
     }
 }
-/*创建一个空VNode节点*/
+/*创建一个注释节点*/
 export const createEmptyVNode = (text: string = "") => {
     const node = new VNode();
     node.text = text;
